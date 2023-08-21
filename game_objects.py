@@ -1,10 +1,11 @@
-import math
-from arcade import TextureAtlas
 from constants import *
+
+import math
 import pymunk as pm
 import pymunk.constraints as pmc
 import arcade as arc
 import numpy as np
+from perlin_noise import PerlinNoise
 
 class Player():
     def __init__(self, x: float, y: float, space: pm.Space):
@@ -41,11 +42,17 @@ class Player():
         self.sprites.draw()
         # arc.draw_rectangle_outline(self.car.center_x, self.car.center_y, 60, 40, arc.color.GREEN, 2)
 
+    def destroy(self):
+        self.car.destroy()
+        self.b_wheel.destroy()
+        self.f_wheel.destroy()
+
+
 class Car(arc.Sprite):
     def __init__(self, x: float, y: float, width: float, height: float, space: pm.Space):
         super().__init__("assets/truck/Body.png", 0.1)
         
-        mass = 10
+        mass = 20
 
         moment = pm.moment_for_box(mass, (width, height))
         self.body = pm.Body(mass, moment)
@@ -61,13 +68,17 @@ class Car(arc.Sprite):
         self.center_y = self.body.position.y
         self.angle = math.degrees(self.shape.body.angle)
 
+    def destroy(self):
+        self.space.remove(self.body, self.shape)
+
+
 class Wheel(arc.Sprite):
     def __init__(self, x: float, y: float, space: pm.Space) -> None:
         super().__init__("assets/truck/Wheel.png", 0.1)
 
         self.speed = 0
 
-        mass = 2
+        mass = 4
         radius = 10
         moment = pm.moment_for_circle(mass, 0, radius)
 
@@ -75,8 +86,8 @@ class Wheel(arc.Sprite):
         self.body.position = (x, y)
 
         self.shape = pm.Circle(self.body, radius)
-        # self.shape.elasticity = 10
-        self.shape.friction = 100
+        self.shape.elasticity = 10
+        self.shape.friction = 200
 
         self.space = space
         self.space.add(self.body, self.shape)
@@ -100,23 +111,29 @@ class Wheel(arc.Sprite):
         self.center_y = self.body.position.y
         self.angle = math.degrees(self.shape.body.angle)
 
-        self.body.torque = -10000*self.speed
+        self.body._set_torque(-20000*self.speed)
     
-
+    def destroy(self):
+        self.space.remove(self.body, self.shape)
 
 
 class Terrain:
     def __init__(self, space: pm.Space) -> None:
         self.space = space
 
+        self.noise = PerlinNoise()
+
         length = 20
-        prev_y = 300
+        prev_y = 200
+        frequency = 240
+        amplitude = 80
         for x in range(length, WINDOW_WIDTH+1, length):
-            # y = 100 * (1 + 0.2 * (x / 50) ** 2)  # Ejemplo de ecuación de curva
-            y = 300 + 50*np.sin(x/50)
+            noise_value = self.noise([x / frequency])
+            noise_value = amplitude * noise_value
+            y = int(prev_y + noise_value)
             segment = pm.Segment(self.space.static_body, (x-length, prev_y), (x, y), 10)
             prev_y = y
-            segment.friction = 100
+            segment.friction = 200
             self.space.add(segment)
 
     def draw(self):

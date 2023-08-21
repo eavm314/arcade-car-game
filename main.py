@@ -11,13 +11,16 @@ class App(arc.Window):
         self.space.gravity = (0, -500)
 
         # Crear el jugador
-        self.player = Player(200, 500, self.space)
+        self.player = Player(100, 300, self.space)
 
         # Crear el terreno curvado
         self.terrain = Terrain(self.space)
 
     def on_key_press(self, symbol: int, modifiers: int):
         self.player.key_press(symbol)
+        if symbol == arc.key.SPACE:
+            self.player.destroy()
+            self.player = Player(100, 300, self.space)
     
     def on_key_release(self, symbol: int, modifiers: int):
         self.player.key_release(symbol)
