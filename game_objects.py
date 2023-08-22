@@ -30,10 +30,13 @@ class Player():
     def key_press(self, key: int):
         self.b_wheel.key_press(key)
         self.f_wheel.key_press(key)
+        self.car.key_press(key)
+        
     
     def key_release(self, key: int):
         self.b_wheel.key_release(key)
         self.f_wheel.key_release(key)
+        self.car.key_release(key)
 
     def update(self):
         self.sprites.update()
@@ -47,6 +50,12 @@ class Player():
         self.b_wheel.destroy()
         self.f_wheel.destroy()
 
+    def move(self, x: float, y: float):
+        self.car.body.position = (x, y)
+        self.b_wheel.body.position = (x-self.car.width/2+10, y-self.car.height)
+        self.f_wheel.body.position = (x+self.car.width/2-10, y-self.car.height)
+
+
 
 class Car(arc.Sprite):
     def __init__(self, x: float, y: float, width: float, height: float, space: pm.Space):
@@ -54,22 +63,36 @@ class Car(arc.Sprite):
         
         mass = 20
 
+        self.angular_velocity = 0
+
         moment = pm.moment_for_box(mass, (width, height))
         self.body = pm.Body(mass, moment)
         self.body.position = (x, y)
 
-        self.shape = pm.Poly.create_box(self.body, (width, height))   
+        self.shape = pm.Poly.create_box(self.body, (width, height)) 
 
         self.space = space
         self.space.add(self.body, self.shape)
 
+    def key_press(self, key: int):
+        if key == arc.key.W:
+            self.angular_velocity = 1
+        if key == arc.key.S:
+            self.angular_velocity = -1
+
+    def key_release(self, key: int):
+        if key in (arc.key.W, arc.key.S):
+            self.angular_velocity = 0
+
     def update(self):
         self.center_x = self.body.position.x
         self.center_y = self.body.position.y
+        self.body._set_torque(200000*self.angular_velocity)
         self.angle = math.degrees(self.shape.body.angle)
 
     def destroy(self):
         self.space.remove(self.body, self.shape)
+
 
 
 class Wheel(arc.Sprite):
@@ -86,7 +109,7 @@ class Wheel(arc.Sprite):
         self.body.position = (x, y)
 
         self.shape = pm.Circle(self.body, radius)
-        self.shape.elasticity = 10
+        self.shape.elasticity = 20
         self.shape.friction = 200
 
         self.space = space
@@ -120,25 +143,49 @@ class Wheel(arc.Sprite):
 class Terrain:
     def __init__(self, space: pm.Space) -> None:
         self.space = space
+        self.segments = []
+        self.generate_terrain()
 
-        self.noise = PerlinNoise()
+    def generate_terrain(self):
+        noise = PerlinNoise()
+        self.sprites = arc.SpriteList()
+
+        for s in self.segments:
+            self.space.remove(s)
+        self.segments = []
 
         length = 20
-        prev_y = 200
-        frequency = 240
-        amplitude = 80
+        prev_y = 250
+        frequency = 120
+        amplitude = 20
         for x in range(length, WINDOW_WIDTH+1, length):
-            noise_value = self.noise([x / frequency])
+            noise_value = noise([x / frequency])
             noise_value = amplitude * noise_value
+
             y = int(prev_y + noise_value)
-            segment = pm.Segment(self.space.static_body, (x-length, prev_y), (x, y), 10)
-            prev_y = y
+
+            segment = pm.Segment(self.space.static_body, (x-length, prev_y), (x, y), 8)
             segment.friction = 200
-            self.space.add(segment)
+            self.segments.append(segment)
+
+            sprite = arc.Sprite("assets/terrain/terrain-forest-surface-unit.png", 0.35)
+            sprite.width += abs(y-prev_y)/2
+            sprite.center_x = x-length/2
+            sprite.center_y = (y+prev_y)/2
+            sprite.angle = math.degrees(np.arctan((y-prev_y)/20))
+            self.sprites.append(sprite)
+
+            prev_y = y
+            amplitude += 2
+            # frequency += 5
+
+        for s in self.segments:
+            self.space.add(s)
 
     def draw(self):
-        for shape in self.space.shapes:
-            if isinstance(shape, pm.Segment):
-                p1 = shape.a
-                p2 = shape.b
-                arc.draw_line(p1[0], p1[1], p2[0], p2[1], arc.color.DARK_GREEN, 10)
+        # for shape in self.space.shapes:
+        #     if isinstance(shape, pm.Segment):
+        #         p1 = shape.a
+        #         p2 = shape.b
+        #         arc.draw_line(p1[0], p1[1], p2[0], p2[1], arc.color.DARK_GREEN, 10)
+        self.sprites.draw()

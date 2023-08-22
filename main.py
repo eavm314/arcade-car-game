@@ -11,7 +11,7 @@ class App(arc.Window):
         self.space.gravity = (0, -500)
 
         # Crear el jugador
-        self.player = Player(100, 300, self.space)
+        self.player = Player(50, 300, self.space)
 
         # Crear el terreno curvado
         self.terrain = Terrain(self.space)
@@ -20,7 +20,7 @@ class App(arc.Window):
         self.player.key_press(symbol)
         if symbol == arc.key.SPACE:
             self.player.destroy()
-            self.player = Player(100, 300, self.space)
+            self.player = Player(50, 300, self.space)
     
     def on_key_release(self, symbol: int, modifiers: int):
         self.player.key_release(symbol)
@@ -34,11 +34,13 @@ class App(arc.Window):
         # Dibujar el terreno
         self.terrain.draw()
 
-        
-
-    def on_update(self, delta_time):
+    def on_update(self, delta_time: float):
         self.space.step(delta_time)
         self.player.update()
+        if self.player.car.position[0] > WINDOW_WIDTH:
+            self.player.destroy()
+            self.player = Player(50, 300, self.space)
+            self.terrain.generate_terrain()
 
 if __name__ == "__main__":
     app = App()
