@@ -182,10 +182,17 @@ class Terrain:
         for s in self.segments:
             self.space.add(s)
 
+    def generate_coins(self):
+        coins = arc.SpriteList()
+        coins_pos = self.segments[7::5]
+        for cp in coins_pos:
+            coins.append(Coin(cp.center_of_gravity.x, cp.center_of_gravity.y+30))
+        return coins
+
     def draw(self):
-        # for shape in self.space.shapes:
-        #     if isinstance(shape, pm.Segment):
-        #         p1 = shape.a
-        #         p2 = shape.b
-        #         arc.draw_line(p1[0], p1[1], p2[0], p2[1], arc.color.DARK_GREEN, 10)
         self.sprites.draw()
+
+
+class Coin(arc.Sprite):
+    def __init__(self, x: float, y: float):
+        super().__init__("assets/coin.png", 0.05, center_x=x, center_y=y)
