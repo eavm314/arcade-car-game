@@ -7,8 +7,16 @@ Este es un juego de simulación de monster truck en 2D donde los jugadores contr
 ## Cómo Jugar
 
 1. Asegúrate de tener Python y las bibliotecas `arcade`, `pymunk`, `numpy` y `perlin_noise` instaladas en tu entorno.
-2. Clona o descarga este repositorio.
-3. Ejecuta el archivo `main.py` con Python.
+   Para instalar las bibliotecas requeridas, ejecuta los siguientes comandos en tu terminal:
+
+   ```bash
+   pip install arcade
+   pip install pymunk
+   pip install numpy
+   pip install perlin-noise
+   
+3. Clona o descarga este repositorio.
+4. Ejecuta el archivo `main.py` con Python.
 
 ## Controles
 
@@ -25,4 +33,5 @@ Recolecta la mayor cantidad de monedas posible mientras navegas por el terreno. 
 
 ## Créditos
 
-- Desarrollado por __Enrique Vicente__
+Desarrollado por:
+- __Enrique Vicente__, Código: 61997
