@@ -7,6 +7,7 @@ import arcade as arc
 import numpy as np
 from perlin_noise import PerlinNoise
 
+
 class Player():
     def __init__(self, x: float, y: float, space: pm.Space):
         self.sprites = arc.SpriteList()
@@ -23,16 +24,17 @@ class Player():
         self.sprites.append(self.b_wheel)
         self.sprites.append(self.f_wheel)
 
-        back_spring = pmc.PinJoint(self.car.body, self.b_wheel.body, (-width / 2+10, -height), (0, 0))
-        front_spring = pmc.PinJoint(self.car.body, self.f_wheel.body, (width / 2-10, -height), (0, 0))
+        back_spring = pmc.PinJoint(
+            self.car.body, self.b_wheel.body, (-width / 2+10, -height), (0, 0))
+        front_spring = pmc.PinJoint(
+            self.car.body, self.f_wheel.body, (width / 2-10, -height), (0, 0))
         self.space.add(front_spring, back_spring)
 
     def key_press(self, key: int):
         self.b_wheel.key_press(key)
         self.f_wheel.key_press(key)
         self.car.key_press(key)
-        
-    
+
     def key_release(self, key: int):
         self.b_wheel.key_release(key)
         self.f_wheel.key_release(key)
@@ -56,12 +58,11 @@ class Player():
         self.f_wheel.body.position = (x+self.car.width/2-10, y-self.car.height)
 
 
-
 class Car(arc.Sprite):
     def __init__(self, x: float, y: float, width: float, height: float, space: pm.Space):
         super().__init__("assets/truck/Body.png", 0.1)
-        
-        mass = 20
+
+        mass = 16
 
         self.angular_velocity = 0
 
@@ -69,10 +70,29 @@ class Car(arc.Sprite):
         self.body = pm.Body(mass, moment)
         self.body.position = (x, y)
 
-        self.shape = pm.Poly.create_box(self.body, (width, height)) 
+        vertices_box_up = [
+            (-width/3, 0),
+            (-width/3, height/2),
+            (width/3, height/2),
+            (width/3, 0)
+        ]
+
+        vertices_box_down = [
+            (-width/2, -height/2),
+            (-width/2, 0),
+            (width/2, 0),
+            (width/2, -height/2)
+        ]
+
+        # self.shape = pm.Poly.create_box(self.body, (width, height))
+
+        self.shape_up = pm.Poly(self.body, vertices_box_up)
+        self.shape_down = pm.Poly(self.body, vertices_box_down)
+
+        self.shape_up.friction = 100
 
         self.space = space
-        self.space.add(self.body, self.shape)
+        self.space.add(self.body, self.shape_up, self.shape_down)
 
     def key_press(self, key: int):
         if key == arc.key.W:
@@ -88,11 +108,10 @@ class Car(arc.Sprite):
         self.center_x = self.body.position.x
         self.center_y = self.body.position.y
         self.body._set_torque(200000*self.angular_velocity)
-        self.angle = math.degrees(self.shape.body.angle)
+        self.angle = math.degrees(self.body.angle)
 
     def destroy(self):
-        self.space.remove(self.body, self.shape)
-
+        self.space.remove(self.body, self.shape_up, self.shape_down)
 
 
 class Wheel(arc.Sprite):
@@ -123,11 +142,13 @@ class Wheel(arc.Sprite):
                 self.speed = -1
             case arc.key.LSHIFT:
                 if self.speed > 0:
-                    self.speed *= 2
+                    self.speed = 2
 
     def key_release(self, key: int):
         if key in (arc.key.D, arc.key.A):
             self.speed = 0
+        if key == arc.key.LSHIFT and self.speed > 0:
+            self.speed = 1
 
     def update(self):
         self.center_x = self.body.position.x
@@ -135,7 +156,7 @@ class Wheel(arc.Sprite):
         self.angle = math.degrees(self.shape.body.angle)
 
         self.body._set_torque(-20000*self.speed)
-    
+
     def destroy(self):
         self.space.remove(self.body, self.shape)
 
@@ -157,18 +178,20 @@ class Terrain:
         length = 20
         prev_y = 250
         frequency = 120
-        amplitude = 20
-        for x in range(length, WINDOW_WIDTH+1, length):
+        amplitude = 16
+        for x in range(0, WINDOW_WIDTH+1, length):
             noise_value = noise([x / frequency])
             noise_value = amplitude * noise_value
 
             y = int(prev_y + noise_value)
 
-            segment = pm.Segment(self.space.static_body, (x-length, prev_y), (x, y), 8)
+            segment = pm.Segment(self.space.static_body,
+                                 (x-length, prev_y), (x, y), 6)
             segment.friction = 200
             self.segments.append(segment)
 
-            sprite = arc.Sprite("assets/terrain/terrain-forest-surface-unit.png", 0.35)
+            sprite = arc.Sprite(
+                "assets/terrain/terrain-forest-surface-unit.png", 0.35)
             sprite.width += abs(y-prev_y)/2
             sprite.center_x = x-length/2
             sprite.center_y = (y+prev_y)/2
@@ -176,7 +199,7 @@ class Terrain:
             self.sprites.append(sprite)
 
             prev_y = y
-            amplitude += 2
+            amplitude += 1.6
             # frequency += 5
 
         for s in self.segments:
@@ -186,7 +209,8 @@ class Terrain:
         coins = arc.SpriteList()
         coins_pos = self.segments[7::5]
         for cp in coins_pos:
-            coins.append(Coin(cp.center_of_gravity.x, cp.center_of_gravity.y+30))
+            coins.append(Coin(cp.center_of_gravity.x,
+                         cp.center_of_gravity.y+30))
         return coins
 
     def draw(self):

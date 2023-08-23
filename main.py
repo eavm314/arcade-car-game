@@ -34,6 +34,7 @@ class App(arc.Window):
                 self.game_over = False
                 self.lives = 3
                 self.score = 0
+                self.terrain.generate_terrain()
                 self.coins = self.terrain.generate_coins()
                 self.player = Player(50, 350, self.space)
                 return
