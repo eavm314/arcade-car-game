@@ -30,8 +30,3 @@ Este es un juego de simulación de monster truck en 2D donde los jugadores contr
 ## Objetivo
 
 Recolecta la mayor cantidad de monedas posible mientras navegas por el terreno. Intenta mantener el camión en equilibrio y evita volcar. Si pierdes todas tus vidas, verás un mensaje de "Game Over", pero podrás reiniciar el juego presionando la barra espaciadora.
-
-## Créditos
-
-Desarrollado por:
-- __Enrique Vicente__, Código: 61997
